@@ -5,88 +5,159 @@
 #include <vector>
 #include <unordered_map>
 #include <iostream>
-using namespace std;
+#include <fstream>
+#include <limits>
+#include <algorithm>
 
 struct Viaje {
-    string origen;
-    string destino;
+    std::string origen;
+    std::string destino;
     float costo;
 };
 
 struct Nave {
-    string codigo;
-    string nombre;
-    vector<Viaje> historial;
+    std::string codigo;
+    std::string nombre;
+    std::vector<Viaje> historial;
 };
 
-static vector<Nave> naves;
+static std::vector<Nave> naves;
 
-bool naveExiste(const string& codigo) {
-    for (const auto& n : naves) {
-        if (n.codigo == codigo) return true;
-    }
-    return false;
+inline bool naveExiste(const std::string& codigo) {
+    return std::any_of(naves.begin(), naves.end(), 
+        [&codigo](const Nave& n) { return n.codigo == codigo; });
 }
 
-void agregarNave() {
-    Nave n;
-    cout << "Ingrese nombre de la nave: "; cin >> n.nombre;
-    cout << "Ingrese codigo de la nave: "; cin >> n.codigo;
-    if (naveExiste(n.codigo)) {
-        cout << "Nave ya registrada.\n";
+inline void cargarNaves() {
+    std::ifstream archivo("naves.txt");
+    if (!archivo) {
+        std::cerr << "Advertencia: No se pudo abrir el archivo naves.txt\n";
         return;
     }
-    naves.push_back(n);
-    cout << "Nave agregada exitosamente.\n";
-}
 
-void registrarViaje() {
-    string codigo;
-    cout << "Ingrese codigo de la nave: ";
-    cin >> codigo;
-
-    for (auto& n : naves) {
-        if (n.codigo == codigo) {
-            Viaje v;
-            cout << "Ingrese galaxia origen: "; cin >> v.origen;
-            cout << "Ingrese galaxia destino: "; cin >> v.destino;
-            cout << "Ingrese costo del viaje: "; cin >> v.costo;
-            n.historial.push_back(v);
-            cout << "Viaje registrado exitosamente.\n";
-            return;
+    std::string codigo, nombre;
+    while (archivo >> codigo >> std::ws && std::getline(archivo, nombre)) {
+        if (!naveExiste(codigo)) {
+            naves.push_back({codigo, nombre});
         }
     }
-    cout << "Nave no encontrada.\n";
 }
 
-void mostrarHistorialPorNave() {
-    string codigo;
-    cout << "Ingrese codigo de la nave: ";
-    cin >> codigo;
+inline void cargarViajes() {
+    std::ifstream archivo("viajes.txt");
+    if (!archivo) {
+        std::cerr << "Advertencia: No se pudo abrir el archivo viajes.txt\n";
+        return;
+    }
+
+    std::string codigo, origen, destino;
+    float costo;
+    while (archivo >> codigo >> origen >> destino >> costo) {
+        auto it = std::find_if(naves.begin(), naves.end(), 
+            [&codigo](const Nave& n) { return n.codigo == codigo; });
+        
+        if (it != naves.end()) {
+            it->historial.push_back({origen, destino, costo});
+        }
+    }
+}
+
+inline void guardarNaves() {
+    std::ofstream archivo("naves.txt");
+    if (!archivo) {
+        std::cerr << "Error: No se pudo guardar las naves\n";
+        return;
+    }
 
     for (const auto& n : naves) {
-        if (n.codigo == codigo) {
-            cout << "Historial de viajes para " << n.nombre << " (" << n.codigo << "):\n";
-            for (const auto& v : n.historial) {
-                cout << "Origen: " << v.origen << ", Destino: " << v.destino << ", Costo: " << v.costo << "\n";
-            }
-            return;
-        }
+        archivo << n.codigo << " " << n.nombre << "\n";
     }
-    cout << "Nave no encontrada.\n";
 }
 
-void cargarNaves() {
-    naves.push_back({"N001", "Falcon", {{"G001", "G002", 10.0}}});
-    naves.push_back({"N002", "Andromeda", {{"G003", "G004", 15.0}}});
-    naves.push_back({"N003", "Nebula", {{"G005", "G006", 20.0}}});
-    naves.push_back({"N004", "Eclipse", {{"G007", "G008", 18.0}}});
-    naves.push_back({"N005", "Lynx", {{"G009", "G010", 12.5}}});
-    naves.push_back({"N006", "Orion", {{"G001", "G005", 25.0}}});
-    naves.push_back({"N007", "Phoenix", {{"G002", "G003", 14.0}}});
-    naves.push_back({"N008", "Voyager", {{"G004", "G006", 19.0}}});
-    naves.push_back({"N009", "Nova", {{"G007", "G001", 16.0}}});
-    naves.push_back({"N010", "Specter", {{"G008", "G002", 22.0}}});
+inline void guardarViaje(const std::string& codigo, const Viaje& v) {
+    std::ofstream archivo("viajes.txt", std::ios::app);
+    if (!archivo) {
+        std::cerr << "Error: No se pudo registrar el viaje\n";
+        return;
+    }
+    archivo << codigo << " " << v.origen << " " << v.destino << " " << v.costo << "\n";
+}
+
+inline void agregarNave() {
+    Nave n;
+    
+    std::cout << "Ingrese nombre de la nave: ";
+    std::getline(std::cin >> std::ws, n.nombre);
+    
+    std::cout << "Ingrese codigo de la nave: ";
+    std::cin >> n.codigo;
+
+    if (naveExiste(n.codigo)) {
+        std::cerr << "Error: Nave ya registrada\n";
+        return;
+    }
+
+    naves.push_back(n);
+    guardarNaves();
+    std::cout << "Nave agregada exitosamente.\n";
+}
+
+inline void registrarViaje() {
+    std::string codigo;
+    std::cout << "Ingrese codigo de la nave: ";
+    std::cin >> codigo;
+
+    auto it = std::find_if(naves.begin(), naves.end(), 
+        [&codigo](const Nave& n) { return n.codigo == codigo; });
+
+    if (it == naves.end()) {
+        std::cerr << "Error: Nave no encontrada\n";
+        return;
+    }
+
+    Viaje v;
+    std::cout << "Ingrese galaxia origen: ";
+    std::cin >> v.origen;
+    
+    std::cout << "Ingrese galaxia destino: ";
+    std::cin >> v.destino;
+    
+    std::cout << "Ingrese costo del viaje: ";
+    while (!(std::cin >> v.costo) || v.costo <= 0) {
+        std::cerr << "Error: Ingrese un costo válido (número positivo): ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
+    it->historial.push_back(v);
+    guardarViaje(it->codigo, v);
+    std::cout << "Viaje registrado exitosamente.\n";
+}
+
+inline void mostrarHistorialPorNave() {
+    std::string codigo;
+    std::cout << "Ingrese codigo de la nave: ";
+    std::cin >> codigo;
+
+    auto it = std::find_if(naves.begin(), naves.end(), 
+        [&codigo](const Nave& n) { return n.codigo == codigo; });
+
+    if (it == naves.end()) {
+        std::cerr << "Error: Nave no encontrada\n";
+        return;
+    }
+
+    std::cout << "\nHistorial de viajes para " << it->nombre << " (" << it->codigo << "):\n";
+    if (it->historial.empty()) {
+        std::cout << "No hay viajes registrados\n";
+        return;
+    }
+
+    for (const auto& v : it->historial) {
+        std::cout << " - Origen: " << v.origen 
+                  << ", Destino: " << v.destino 
+                  << ", Costo: " << v.costo << "\n";
+    }
 }
 
 #endif

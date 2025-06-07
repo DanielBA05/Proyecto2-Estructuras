@@ -116,6 +116,7 @@ int main() {
             default: cout << "Opcion invalida.\n";
         }
     } while (opcion != 0);
+      guardarGalaxias();
 
     return 0;
 }

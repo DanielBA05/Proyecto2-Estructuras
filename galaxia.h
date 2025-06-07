@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <limits>
 
 struct Galaxia {
     std::string nombre;
@@ -11,17 +13,38 @@ struct Galaxia {
 
 static std::vector<Galaxia> galaxias;
 
+inline bool galaxiaExiste(const std::string& codigo) {
+    for (const auto& g : galaxias) {
+        if (g.codigo == codigo) return true;
+    }
+    return false;
+}
+
+inline void guardarGalaxias() {
+    std::ofstream out("galaxias.txt");
+    if (!out) {
+        std::cerr << "No se pudo abrir el archivo galaxias.txt para escritura\n";
+        return;
+    }
+
+    for (const auto& g : galaxias) {
+        out << g.nombre << " " << g.codigo << " " << g.x << " " << g.y << " " << g.z << "\n";
+    }
+}
+
 inline void cargarGalaxias() {
-    galaxias.push_back({"Andromeda", "G001", 0.1, 0.2, 0.3});
-    galaxias.push_back({"Orion", "G002", 1.1, 2.2, 3.3});
-    galaxias.push_back({"Pegaso", "G003", 2.0, 3.1, 4.2});
-    galaxias.push_back({"Fenix", "G004", 4.2, 5.3, 6.4});
-    galaxias.push_back({"Centauro", "G005", 6.0, 7.1, 8.2});
-    galaxias.push_back({"Cisne", "G006", 1.3, 2.4, 3.5});
-    galaxias.push_back({"Sagitario", "G007", 7.7, 8.8, 9.9});
-    galaxias.push_back({"Leo", "G008", 2.5, 3.6, 4.7});
-    galaxias.push_back({"Draco", "G009", 5.0, 6.0, 7.0});
-    galaxias.push_back({"Hercules", "G010", 8.1, 9.2, 1.3});
+    std::ifstream in("galaxias.txt");
+    if (!in) {
+        std::cerr << "No se pudo abrir el archivo galaxias.txt\n";
+        return;
+    }
+
+    Galaxia g;
+    while (in >> g.nombre >> g.codigo >> g.x >> g.y >> g.z) {
+        if (!galaxiaExiste(g.codigo)) {
+            galaxias.push_back(g);
+        }
+    }
 }
 
 inline void mostrarGalaxias() {
@@ -31,24 +54,30 @@ inline void mostrarGalaxias() {
     }
 }
 
-inline bool galaxiaExiste(const std::string& codigo) {
-    for (const auto& g : galaxias) {
-        if (g.codigo == codigo) return true;
-    }
-    return false;
-}
-
 inline void agregarGalaxia() {
     Galaxia g;
-    std::cout << "Ingrese nombre: "; std::cin >> g.nombre;
-    std::cout << "Ingrese codigo: "; std::cin >> g.codigo;
+    std::cout << "Ingrese nombre: ";
+    std::cin >> g.nombre;
+    
+    std::cout << "Ingrese codigo: ";
+    std::cin >> g.codigo;
+    
     if (galaxiaExiste(g.codigo)) {
         std::cout << "Galaxia ya registrada.\n";
+        std::cin.clear(); // Limpiar posibles errores
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         return;
     }
+    
     std::cout << "Ingrese coordenadas X Y Z: ";
-    std::cin >> g.x >> g.y >> g.z;
+    while (!(std::cin >> g.x >> g.y >> g.z)) {
+        std::cout << "Entrada inválida. Por favor ingrese números para las coordenadas: ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+    
     galaxias.push_back(g);
+    guardarGalaxias(); 
     std::cout << "Galaxia agregada exitosamente.\n";
 }
 
