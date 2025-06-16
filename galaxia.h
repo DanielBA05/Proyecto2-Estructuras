@@ -4,16 +4,17 @@
 #include <vector>
 #include <fstream>
 #include <limits>
+using namespace std;
 
 struct Galaxia {
-    std::string nombre;
-    std::string codigo;
+    string nombre;
+    string codigo;
     double x, y, z;
 };
 
-static std::vector<Galaxia> galaxias;
+static vector<Galaxia> galaxias;
 
-inline bool galaxiaExiste(const std::string& codigo) {
+inline bool galaxiaExiste(const string& codigo) {
     for (const auto& g : galaxias) {
         if (g.codigo == codigo) return true;
     }
@@ -21,9 +22,9 @@ inline bool galaxiaExiste(const std::string& codigo) {
 }
 
 inline void guardarGalaxias() {
-    std::ofstream out("galaxias.txt");
+    ofstream out("galaxias.txt");
     if (!out) {
-        std::cerr << "No se pudo abrir el archivo galaxias.txt para escritura\n";
+        cerr << "No se pudo abrir el archivo galaxias.txt para escritura\n";
         return;
     }
 
@@ -33,9 +34,9 @@ inline void guardarGalaxias() {
 }
 
 inline void cargarGalaxias() {
-    std::ifstream in("galaxias.txt");
+    ifstream in("galaxias.txt");
     if (!in) {
-        std::cerr << "No se pudo abrir el archivo galaxias.txt\n";
+        //cerr << "No se pudo abrir el archivo galaxias.txt\n";
         return;
     }
 
@@ -48,39 +49,84 @@ inline void cargarGalaxias() {
 }
 
 inline void mostrarGalaxias() {
+    if (galaxias.empty()) {
+        cout << "No hay galaxias registradas.\n";
+        return;
+    }
+
     for (const auto& g : galaxias) {
-        std::cout << "Nombre: " << g.nombre << ", Codigo: " << g.codigo
+        cout << "Nombre: " << g.nombre << ", Codigo: " << g.codigo
                   << ", Coordenadas: (" << g.x << ", " << g.y << ", " << g.z << ")\n";
     }
 }
 
 inline void agregarGalaxia() {
     Galaxia g;
-    std::cout << "Ingrese nombre: ";
-    std::cin >> g.nombre;
+    cout << "Ingrese nombre: ";
+    cin >> g.nombre;
     
-    std::cout << "Ingrese codigo: ";
-    std::cin >> g.codigo;
+    cout << "Ingrese codigo: ";
+    cin >> g.codigo;
     
     if (galaxiaExiste(g.codigo)) {
-        std::cout << "Galaxia ya registrada.\n";
-        std::cin.clear(); // Limpiar posibles errores
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        cout << "Galaxia ya registrada.\n";
         return;
     }
     
-    std::cout << "Ingrese coordenadas X Y Z: ";
-    while (!(std::cin >> g.x >> g.y >> g.z)) {
-        std::cout << "Entrada inválida. Por favor ingrese números para las coordenadas: ";
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    cout << "Ingrese coordenadas X Y Z: ";
+    while (!(cin >> g.x >> g.y >> g.z)) {
+        cout << "Entrada inválida. Por favor ingrese números para las coordenadas: ";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
     
     galaxias.push_back(g);
     guardarGalaxias(); 
-    std::cout << "Galaxia agregada exitosamente.\n";
+    cout << "Galaxia agregada exitosamente.\n";
 }
 
-inline const std::vector<Galaxia>& obtenerGalaxias() {
+inline void modificarGalaxia() {
+    string codigo;
+    cout << "Ingrese el código de la galaxia a modificar: ";
+    cin >> codigo;
+
+    for (auto& g : galaxias) {
+        if (g.codigo == codigo) {
+            cout << "Modificando galaxia: " << g.nombre << "\n";
+            cout << "Nuevo nombre: ";
+            cin >> g.nombre;
+            cout << "Nuevas coordenadas X Y Z: ";
+            while (!(cin >> g.x >> g.y >> g.z)) {
+                cout << "Entrada inválida. Intente de nuevo: ";
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            }
+            guardarGalaxias();
+            cout << "Galaxia modificada exitosamente.\n";
+            return;
+        }
+    }
+
+    cout << "No se encontró una galaxia con ese código.\n";
+}
+
+inline void eliminarGalaxia() {
+    string codigo;
+    cout << "Ingrese el código de la galaxia a eliminar: ";
+    cin >> codigo;
+
+    for (auto it = galaxias.begin(); it != galaxias.end(); ++it) {
+        if (it->codigo == codigo) {
+            galaxias.erase(it);
+            guardarGalaxias();
+            cout << "Galaxia eliminada exitosamente.\n";
+            return;
+        }
+    }
+
+    cout << "No se encontró una galaxia con ese código.\n";
+}
+
+inline const vector<Galaxia>& obtenerGalaxias() {
     return galaxias;
 }
