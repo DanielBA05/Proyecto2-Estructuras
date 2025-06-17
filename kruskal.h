@@ -5,42 +5,44 @@
 #include <algorithm>
 #include <random>
 #include "grafo.h"
-using namespace std;
 
-inline vector<Ruta> aplicarKruskal() {
-    vector<Ruta> resultado;
-    unordered_map<string, string> padre;
+static std::unordered_map<std::string, std::string> padre;
 
-    auto encontrar = [&](string nodo) -> string {
-        if (padre.find(nodo) == padre.end()) {
-            padre[nodo] = nodo;
-        }
-        while (padre[nodo] != nodo) {
-            padre[nodo] = padre[padre[nodo]]; // Compresión de ruta
-            nodo = padre[nodo]; // Corrección: asignación correcta del string
-        }
-        return nodo;
-    };
+inline std::string encontrar(const std::string& nodo) {
+    if (padre[nodo] == nodo) return nodo;
+    return padre[nodo] = encontrar(padre[nodo]);
+}
 
-    // Procesar solo aristas únicas (omitir duplicados)
-    vector<Ruta> aristasUnicas;
-    for (size_t i = 0; i < rutas.size(); i += 2) {
-        aristasUnicas.push_back(rutas[i]);
+inline void unir(const std::string& a, const std::string& b) {
+    padre[encontrar(a)] = encontrar(b);
+}
+
+inline void aplicarKruskal() {
+    auto aristas = obtenerAristas();
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(aristas.begin(), aristas.end(), g);
+
+    padre.clear();
+    std::vector<Arista> mst;
+
+    for (const auto& a : aristas) {
+        padre[a.origen] = a.origen;
+        padre[a.destino] = a.destino;
     }
 
-    // Ordenar las rutas por costo
-    sort(aristasUnicas.begin(), aristasUnicas.end(), 
-        [](const Ruta& a, const Ruta& b) { return a.costo < b.costo; });
-
-    for (const auto& r : aristasUnicas) {
-        string raizOrigen = encontrar(r.origen);
-        string raizDestino = encontrar(r.destino);
-        
-        if (raizOrigen != raizDestino) {
-            resultado.push_back(r);
-            padre[raizDestino] = raizOrigen; // Unir conjuntos
+    for (const auto& a : aristas) {
+        std::string u = encontrar(a.origen);
+        std::string v = encontrar(a.destino);
+        if (u != v) {
+            mst.push_back(a);
+            unir(u, v);
         }
     }
 
-    return resultado;
+    std::cout << "\n--- Arbol de expansion minimo (Kruskal modificado) ---\n";
+    for (const auto& a : mst) {
+        std::cout << a.origen << " -> " << a.destino << " : " << a.costo << "\n";
+    }
 }

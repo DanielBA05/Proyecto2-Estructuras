@@ -8,36 +8,35 @@
 #include <fstream>
 #include <limits>
 #include <algorithm>
-using namespace std;
 
 struct Viaje {
-    string origen;
-    string destino;
+    std::string origen;
+    std::string destino;
     float costo;
 };
 
 struct Nave {
-    string codigo;
-    string nombre;
-    vector<Viaje> historial;
+    std::string codigo;
+    std::string nombre;
+    std::vector<Viaje> historial;
 };
 
-static vector<Nave> naves;
+static std::vector<Nave> naves;
 
-inline bool naveExiste(const string& codigo) {
-    return any_of(naves.begin(), naves.end(), 
+inline bool naveExiste(const std::string& codigo) {
+    return std::any_of(naves.begin(), naves.end(), 
         [&codigo](const Nave& n) { return n.codigo == codigo; });
 }
 
 inline void cargarNaves() {
-    ifstream archivo("naves.txt");
+    std::ifstream archivo("naves.txt");
     if (!archivo) {
-        cerr << "Advertencia: No se pudo abrir el archivo naves.txt\n";
+        std::cerr << "Advertencia: No se pudo abrir el archivo naves.txt\n";
         return;
     }
 
-    string codigo, nombre;
-    while (archivo >> codigo >> ws && getline(archivo, nombre)) {
+    std::string codigo, nombre;
+    while (archivo >> codigo >> std::ws && std::getline(archivo, nombre)) {
         if (!naveExiste(codigo)) {
             naves.push_back({codigo, nombre});
         }
@@ -45,16 +44,16 @@ inline void cargarNaves() {
 }
 
 inline void cargarViajes() {
-    ifstream archivo("viajes.txt");
+    std::ifstream archivo("viajes.txt");
     if (!archivo) {
-        cerr << "Advertencia: No se pudo abrir el archivo viajes.txt\n";
+        std::cerr << "Advertencia: No se pudo abrir el archivo viajes.txt\n";
         return;
     }
 
-    string codigo, origen, destino;
+    std::string codigo, origen, destino;
     float costo;
     while (archivo >> codigo >> origen >> destino >> costo) {
-        auto it = find_if(naves.begin(), naves.end(), 
+        auto it = std::find_if(naves.begin(), naves.end(), 
             [&codigo](const Nave& n) { return n.codigo == codigo; });
         
         if (it != naves.end()) {
@@ -64,9 +63,9 @@ inline void cargarViajes() {
 }
 
 inline void guardarNaves() {
-    ofstream archivo("naves.txt");
+    std::ofstream archivo("naves.txt");
     if (!archivo) {
-        cerr << "Error: No se pudo guardar las naves\n";
+        std::cerr << "Error: No se pudo guardar las naves\n";
         return;
     }
 
@@ -75,10 +74,10 @@ inline void guardarNaves() {
     }
 }
 
-inline void guardarViaje(const string& codigo, const Viaje& v) {
-    ofstream archivo("viajes.txt", ios::app);
+inline void guardarViaje(const std::string& codigo, const Viaje& v) {
+    std::ofstream archivo("viajes.txt", std::ios::app);
     if (!archivo) {
-        cerr << "Error: No se pudo registrar el viaje\n";
+        std::cerr << "Error: No se pudo registrar el viaje\n";
         return;
     }
     archivo << codigo << " " << v.origen << " " << v.destino << " " << v.costo << "\n";
@@ -87,106 +86,77 @@ inline void guardarViaje(const string& codigo, const Viaje& v) {
 inline void agregarNave() {
     Nave n;
     
-    cout << "Ingrese nombre de la nave: ";
-    getline(cin >> ws, n.nombre);
+    std::cout << "Ingrese nombre de la nave: ";
+    std::getline(std::cin >> std::ws, n.nombre);
     
-    cout << "Ingrese codigo de la nave: ";
-    cin >> n.codigo;
+    std::cout << "Ingrese codigo de la nave: ";
+    std::cin >> n.codigo;
 
     if (naveExiste(n.codigo)) {
-        cerr << "Error: Nave ya registrada\n";
+        std::cerr << "Error: Nave ya registrada\n";
         return;
     }
 
     naves.push_back(n);
     guardarNaves();
-    cout << "Nave agregada exitosamente.\n";
+    std::cout << "Nave agregada exitosamente.\n";
 }
 
 inline void registrarViaje() {
-    string codigo;
-    cout << "Ingrese codigo de la nave: ";
-    cin >> codigo;
+    std::string codigo;
+    std::cout << "Ingrese codigo de la nave: ";
+    std::cin >> codigo;
 
-    auto it = find_if(naves.begin(), naves.end(), 
+    auto it = std::find_if(naves.begin(), naves.end(), 
         [&codigo](const Nave& n) { return n.codigo == codigo; });
 
     if (it == naves.end()) {
-        cerr << "Error: Nave no encontrada\n";
+        std::cerr << "Error: Nave no encontrada\n";
         return;
     }
 
     Viaje v;
-    cout << "Ingrese galaxia origen: ";
-    cin >> v.origen;
+    std::cout << "Ingrese galaxia origen: ";
+    std::cin >> v.origen;
     
-    cout << "Ingrese galaxia destino: ";
-    cin >> v.destino;
+    std::cout << "Ingrese galaxia destino: ";
+    std::cin >> v.destino;
     
-    cout << "Ingrese costo del viaje: ";
-    while (!(cin >> v.costo) || v.costo <= 0) {
-        cerr << "Error: Ingrese un costo válido (número positivo): ";
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    std::cout << "Ingrese costo del viaje: ";
+    while (!(std::cin >> v.costo) || v.costo <= 0) {
+        std::cerr << "Error: Ingrese un costo válido (número positivo): ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 
     it->historial.push_back(v);
     guardarViaje(it->codigo, v);
-    cout << "Viaje registrado exitosamente.\n";
+    std::cout << "Viaje registrado exitosamente.\n";
 }
 
 inline void mostrarHistorialPorNave() {
-    string codigo;
-    cout << "Ingrese codigo de la nave: ";
-    cin >> codigo;
+    std::string codigo;
+    std::cout << "Ingrese codigo de la nave: ";
+    std::cin >> codigo;
 
-    auto it = find_if(naves.begin(), naves.end(), 
+    auto it = std::find_if(naves.begin(), naves.end(), 
         [&codigo](const Nave& n) { return n.codigo == codigo; });
 
     if (it == naves.end()) {
-        cerr << "Error: Nave no encontrada\n";
+        std::cerr << "Error: Nave no encontrada\n";
         return;
     }
-    //corregir viajes 
-    cout << "\nHistorial de viajes para " << it->nombre << " (" << it->codigo << "):\n";
+
+    std::cout << "\nHistorial de viajes para " << it->nombre << " (" << it->codigo << "):\n";
     if (it->historial.empty()) {
-        cout << "No hay viajes registrados\n";
+        std::cout << "No hay viajes registrados\n";
         return;
     }
 
     for (const auto& v : it->historial) {
-        cout << " - Origen: " << v.origen 
+        std::cout << " - Origen: " << v.origen 
                   << ", Destino: " << v.destino 
                   << ", Costo: " << v.costo << "\n";
-    }
-}
-
-inline void mostrarNaves() {
-    if (naves.empty()) {
-        cout << "No hay naves registradas.\n";
-        return;
-    }
-
-    cout << "\nLista de naves:\n";
-    for (const auto& n : naves) {
-        cout << "Codigo: " << n.codigo << " | Nombre: " << n.nombre << "\n";
-    }
-}
-
-inline void eliminarNave() {
-    string codigo;
-    cout << "Ingrese codigo de la nave a eliminar: ";
-    cin >> codigo;
-
-    auto it = remove_if(naves.begin(), naves.end(),
-        [&codigo](const Nave& n) { return n.codigo == codigo; });
-
-    if (it != naves.end()) {
-        naves.erase(it, naves.end());
-        guardarNaves();
-        cout << "Nave eliminada exitosamente.\n";
-    } else {
-        cout << "No se encontró la nave.\n";
     }
 }
 
