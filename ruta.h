@@ -10,51 +10,133 @@
 #include <fstream>
 #include <limits>
 #include <string>
+#include <utility>
 
+using namespace std;
 struct Ruta {
-    std::string origen;
-    std::string destino;
+    string origen;
+    string destino;
     float costo;
+    
+    // Constructor para facilitar la creación
+    Ruta(string o, string d, float c) : origen(move(o)), destino(move(d)), costo(c) {}
 };
 
-static std::vector<Ruta> rutas;
+// Variable global para almacenar las rutas (considerar usar una clase en lugar de global)
+ vector<Ruta> rutas;
 
-inline bool rutaExiste(const std::string& origen, const std::string& destino) {
-    return std::any_of(rutas.begin(), rutas.end(), 
+inline bool rutaExiste(const string& origen, const string& destino) {
+    return any_of(rutas.begin(), rutas.end(), 
         [&](const Ruta& r) {
             return (r.origen == origen && r.destino == destino) ||
                    (r.origen == destino && r.destino == origen);
         });
 }
 
-inline void agregarRuta(const std::string& origen, const std::string& destino, float costo) {
+inline void agregarRuta(const string& origen, const string& destino, float costo) {
     if (origen == destino) {
-        std::cerr << "Error: No se puede crear una ruta al mismo nodo.\n";
+        cerr << "Error: No se puede crear una ruta al mismo nodo.\n";
         return;
     }
 
     if (costo <= 0) {
-        std::cerr << "Error: El costo debe ser un valor positivo.\n";
+        cerr << "Error: El costo debe ser un valor positivo.\n";
         return;
     }
 
     if (!rutaExiste(origen, destino)) {
         rutas.push_back({origen, destino, costo});
         rutas.push_back({destino, origen, costo});
-        std::cout << "Ruta agregada exitosamente.\n";
+        cout << "Ruta agregada exitosamente.\n";
     } else {
-        std::cout << "La ruta ya existe.\n";
+        cout << "La ruta ya existe.\n";
     }
 }
-
-inline void cargarRutas() {
-    std::ifstream archivo("rutas.txt");
-    if (!archivo) {
-        std::cerr << "Advertencia: No se pudo abrir el archivo rutas.txt\n";
+void mostrarTodasLasRutas() {
+    if (rutas.empty()) {
+       cout << "No hay rutas registradas.\n";
         return;
     }
 
-    std::string origen, destino;
+   cout << "--- RUTAS DISPONIBLES ---\n";
+    for (size_t i = 0; i < rutas.size(); i += 2) {
+        const Ruta& r = rutas[i]; // solo tomamos una dirección
+       cout << r.origen << " -> " << r.destino << " (Costo: " << r.costo << ")\n";
+    }
+}
+inline void generarArchivoRutasCortas() {
+    // Primero construimos el grafo completo
+    std::unordered_map<std::string, std::vector<std::pair<std::string, float>>> grafo;
+    for (const auto& r : rutas) {
+        grafo[r.origen].emplace_back(r.destino, r.costo);
+    }
+
+    // Obtenemos todos los nodos únicos
+    std::vector<std::string> nodos;
+    for (const auto& par : grafo) {
+        nodos.push_back(par.first);
+    }
+
+    // Preparamos el archivo de salida
+    std::ofstream archivo("rutas_cortas.txt");
+    if (!archivo) {
+        std::cerr << "Error: No se pudo crear el archivo rutas_cortas.txt\n";
+        return;
+    }
+
+    // Para cada par de nodos, calculamos la ruta más corta
+    for (size_t i = 0; i < nodos.size(); ++i) {
+        for (size_t j = i + 1; j < nodos.size(); ++j) {
+            const auto& inicio = nodos[i];
+            const auto& destino = nodos[j];
+
+            // Implementación de Dijkstra (similar a rutaMenorCosto)
+            std::unordered_map<std::string, float> dist;
+            std::unordered_map<std::string, std::string> anterior;
+            std::priority_queue<std::pair<float, std::string>, 
+                              std::vector<std::pair<float, std::string>>, 
+                              std::greater<>> pq;
+
+            for (const auto& nodo : grafo) {
+                dist[nodo.first] = std::numeric_limits<float>::max();
+            }
+
+            dist[inicio] = 0;
+            pq.emplace(0, inicio);
+
+            while (!pq.empty()) {
+                auto [d, actual] = pq.top(); 
+                pq.pop();
+
+                if (actual == destino) break;
+
+                for (const auto& [vecino, peso] : grafo[actual]) {
+                    float nuevo = dist[actual] + peso;
+                    if (nuevo < dist[vecino]) {
+                        dist[vecino] = nuevo;
+                        anterior[vecino] = actual;
+                        pq.emplace(nuevo, vecino);
+                    }
+                }
+            }
+
+            // Si hay ruta, la escribimos en el archivo
+            if (dist[destino] != std::numeric_limits<float>::max()) {
+                archivo << inicio << " " << destino << " " << dist[destino] << "\n";
+            }
+        }
+    }
+
+    std::cout << "Archivo de rutas cortas generado exitosamente: rutas_cortas.txt\n";
+}
+inline void cargarRutas() {
+    ifstream archivo("rutas.txt");
+    if (!archivo) {
+        cerr << "Advertencia: No se pudo abrir el archivo rutas.txt\n";
+        return;
+    }
+
+    string origen, destino;
     float costo;
     while (archivo >> origen >> destino >> costo) {
         if (!rutaExiste(origen, destino)) {
@@ -65,9 +147,9 @@ inline void cargarRutas() {
 }
 
 inline void guardarRutas() {
-    std::ofstream archivo("rutas.txt");
+    ofstream archivo("rutas.txt");
     if (!archivo) {
-        std::cerr << "Error: No se pudo guardar las rutas.\n";
+        cerr << "Error: No se pudo guardar las rutas.\n";
         return;
     }
 
@@ -76,31 +158,51 @@ inline void guardarRutas() {
         archivo << rutas[i].origen << " " << rutas[i].destino << " " << rutas[i].costo << "\n";
     }
 }
+void eliminarRuta(const std::string& origen, const std::string& destino) {
+    bool eliminada = false;
 
-void rutaMenorCosto(const std::string& inicio, const std::string& destino) {
+    for (auto it = rutas.begin(); it != rutas.end(); ) {
+        if ((it->origen == origen && it->destino == destino) ||
+            (it->origen == destino && it->destino == origen)) {
+            it = rutas.erase(it);
+            eliminada = true;
+        } else {
+            ++it;
+        }
+    }
+
+    if (eliminada) {
+        std::cout << "Ruta entre " << origen << " y " << destino << " eliminada correctamente.\n";
+        guardarRutas(); // Actualiza el archivo rutas.txt
+    } else {
+        std::cout << "La ruta no existe.\n";
+    }
+}
+
+void rutaMenorCosto(const string& inicio, const string& destino) {
     if (inicio == destino) {
-        std::cout << "Origen y destino son el mismo.\n";
+        cout << "Origen y destino son el mismo.\n";
         return;
     }
 
-    std::unordered_map<std::string, std::vector<std::pair<std::string, float>>> grafo;
+    unordered_map<string, vector<pair<string, float>>> grafo;
     for (const auto& r : rutas) {
         grafo[r.origen].emplace_back(r.destino, r.costo);
     }
 
     if (grafo.find(inicio) == grafo.end() || grafo.find(destino) == grafo.end()) {
-        std::cout << "Una de las galaxias no existe o no tiene rutas.\n";
+        cout << "Una de las galaxias no existe o no tiene rutas.\n";
         return;
     }
 
-    std::unordered_map<std::string, float> dist;
-    std::unordered_map<std::string, std::string> anterior;
-    std::priority_queue<std::pair<float, std::string>, 
-                       std::vector<std::pair<float, std::string>>, 
-                       std::greater<>> pq;
+    unordered_map<string, float> dist;
+    unordered_map<string, string> anterior;
+    priority_queue<pair<float, string>, 
+                       vector<pair<float, string>>, 
+                       greater<>> pq;
 
     for (const auto& nodo : grafo) {
-        dist[nodo.first] = std::numeric_limits<float>::max();
+        dist[nodo.first] = numeric_limits<float>::max();
     }
 
     dist[inicio] = 0;
@@ -122,46 +224,46 @@ void rutaMenorCosto(const std::string& inicio, const std::string& destino) {
         }
     }
 
-    if (dist[destino] == std::numeric_limits<float>::max()) {
-        std::cout << "No hay ruta entre " << inicio << " y " << destino << ".\n";
+    if (dist[destino] == numeric_limits<float>::max()) {
+        cout << "No hay ruta entre " << inicio << " y " << destino << ".\n";
         return;
     }
-
-    std::vector<std::string> camino;
-    for (std::string actual = destino; actual != inicio; actual = anterior[actual]) {
+    
+    vector<string> camino;
+    for (string actual = destino; actual != inicio; actual = anterior[actual]) {
         camino.push_back(actual);
     }
     camino.push_back(inicio);
-    std::reverse(camino.begin(), camino.end());
+    reverse(camino.begin(), camino.end());
 
-    std::cout << "Ruta de menor costo: ";
+    cout << "Ruta de menor costo: ";
     for (size_t i = 0; i < camino.size(); ++i) {
-        std::cout << camino[i];
-        if (i != camino.size() - 1) std::cout << " -> ";
+        cout << camino[i];
+        if (i != camino.size() - 1) cout << " -> ";
     }
-    std::cout << "\nCosto total: " << dist[destino] << "\n";
+    cout << "\nCosto total: " << dist[destino] << "\n";
 }
 
-void mostrarRutasDesde(const std::string& inicio) {
-    std::unordered_map<std::string, std::vector<std::string>> grafo;
+void mostrarRutasDesde(const string& inicio) {
+    unordered_map<string, vector<string>> grafo;
     for (const auto& r : rutas) {
         grafo[r.origen].push_back(r.destino);
     }
 
     auto it = grafo.find(inicio);
     if (it == grafo.end()) {
-        std::cout << "La galaxia " << inicio << " no existe o no tiene rutas.\n";
+        cout << "La galaxia " << inicio << " no existe o no tiene rutas.\n";
         return;
     }
 
-    std::cout << "Rutas directas desde " << inicio << ":\n";
+    cout << "Rutas directas desde " << inicio << ":\n";
     for (const auto& dest : it->second) {
-        std::cout << inicio << " -> " << dest << "\n";
+        cout << inicio << " -> " << dest << "\n";
     }
 }
 
-inline const std::vector<Ruta>& obtenerRutas() {
+inline const vector<Ruta>& obtenerRutas() {
     return rutas;
 }
 
-#endif
+#endif 

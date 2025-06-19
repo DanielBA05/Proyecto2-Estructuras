@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "ruta.h"
+#include "galaxia.h"
 
 struct Arista {
     std::string origen;

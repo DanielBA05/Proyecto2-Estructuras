@@ -160,4 +160,33 @@ inline void mostrarHistorialPorNave() {
     }
 }
 
+inline void mostrarNaves() {
+    if (naves.empty()) {
+        std::cout << "No hay naves registradas.\n";
+        return;
+    }
+
+    std::cout << "\nLista de naves:\n";
+    for (const auto& n : naves) {
+        std::cout << "Codigo: " << n.codigo << " | Nombre: " << n.nombre << "\n";
+    }
+}
+
+inline void eliminarNave() {
+    std::string codigo;
+    std::cout << "Ingrese codigo de la nave a eliminar: ";
+    std::cin >> codigo;
+
+    auto it = std::remove_if(naves.begin(), naves.end(),
+        [&codigo](const Nave& n) { return n.codigo == codigo; });
+
+    if (it != naves.end()) {
+        naves.erase(it, naves.end());
+        guardarNaves();
+        std::cout << "Nave eliminada exitosamente.\n";
+    } else {
+        std::cout << "No se encontró la nave.\n";
+    }
+}
+
 #endif
