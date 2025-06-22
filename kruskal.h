@@ -18,12 +18,12 @@ inline vector<Ruta> aplicarKruskal() {
         }
         while (padre[nodo] != nodo) {
             padre[nodo] = padre[padre[nodo]]; // Compresión de ruta
-            nodo = padre[nodo]; // Corrección: asignación correcta del string
+            nodo = padre[nodo]; 
         }
         return nodo;
     };
 
-    // Procesar solo aristas únicas (omitir duplicados)
+    // Procesar solo aristas únicas (omitimos duplicados)
     vector<Ruta> aristasUnicas;
     for (size_t i = 0; i < rutas.size(); i += 2) {
         aristasUnicas.push_back(rutas[i]);
@@ -45,10 +45,10 @@ inline vector<Ruta> aplicarKruskal() {
 
     return resultado;
 }
-
+//generamos el arbol de expansión usando kruskal, en un archivo .txt
 void generarArchivoArbolExpansion() {
-    construirGrafo(); // Este solo se usa si `rutas` depende de aristas, puedes omitirlo si ya están cargadas
-    vector<Ruta> mst = aplicarKruskal(); // corregido el tipo
+    construirGrafo(); 
+    vector<Ruta> mst = aplicarKruskal(); 
     ofstream archivo("arbol_expansion.txt");
 
     if (!archivo.is_open()) {
