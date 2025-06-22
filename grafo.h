@@ -4,14 +4,14 @@
 #include <string>
 #include "ruta.h"
 #include "galaxia.h"
-
+using namespace std;
 struct Arista {
-    std::string origen;
-    std::string destino;
+    string origen;
+    string destino;
     double costo;
 };
 
-static std::vector<Arista> aristas;
+static vector<Arista> aristas;
 
 inline void construirGrafo() {
     aristas.clear();
@@ -32,12 +32,12 @@ inline void construirGrafo() {
 }
 
 inline void mostrarConexiones() {
-    std::cout << "Conexiones en el grafo:\n";
+    cout << "Conexiones en el grafo:\n";
     for (const auto& a : aristas) {
-        std::cout << a.origen << " -> " << a.destino << " : " << a.costo << "\n";
+        cout << a.origen << " -> " << a.destino << " : " << a.costo << "\n";
     }
 }
 
-inline const std::vector<Arista>& obtenerAristas() {
+inline const vector<Arista>& obtenerAristas() {
     return aristas;
 }
